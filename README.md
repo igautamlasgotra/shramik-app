@@ -130,3 +130,4 @@ flutter test
 
 - Detailed report content: `docs/project-report.md`
 - Viva explanation and implementation summary: `docs/viva-guide.md`
+- Detailed code and implementation explanation: `docs/project_explanation.md`
