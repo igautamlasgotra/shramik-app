@@ -117,6 +117,11 @@ To build APK:
 flutter build apk --release
 ```
 
+## APK Download
+
+- Latest APK release: `v1.0`
+- Download link: https://github.com/igautamlasgotra/shramik-app/releases/tag/v1.0
+
 ## Quality Checks
 
 ```bash
