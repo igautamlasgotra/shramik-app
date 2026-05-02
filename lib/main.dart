@@ -39,40 +39,9 @@ class ShramikApp extends StatelessWidget {
     return MaterialApp(
       title: 'Shramik',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFEF6C32),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8F6F1),
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          surfaceTintColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 16,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
+      theme: buildShramikTheme(brightness: Brightness.light),
+      darkTheme: buildShramikTheme(brightness: Brightness.dark),
+      themeMode: app.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: !app.isReady
           ? const BrandedLoadingScreen()
           : app.isLoggedIn
@@ -80,6 +49,59 @@ class ShramikApp extends StatelessWidget {
           : const AuthScreen(),
     );
   }
+}
+
+ThemeData buildShramikTheme({required Brightness brightness}) {
+  final isDark = brightness == Brightness.dark;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFFEF6C32),
+    brightness: brightness,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: isDark
+        ? const Color(0xFF13111C)
+        : const Color(0xFFF8F6F1),
+    textTheme: GoogleFonts.poppinsTextTheme(
+      ThemeData(brightness: brightness).textTheme,
+    ),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+    ),
+    cardTheme: CardThemeData(
+      color: isDark ? const Color(0xFF221F31) : Colors.white,
+      surfaceTintColor: isDark ? const Color(0xFF221F31) : Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: isDark ? const Color(0xFF2A263A) : Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: isDark ? const Color(0xFF1C1928) : Colors.white,
+      indicatorColor: colorScheme.primary.withValues(alpha: 0.18),
+      labelTextStyle: WidgetStatePropertyAll(
+        TextStyle(color: isDark ? Colors.white : const Color(0xFF1E1C38)),
+      ),
+      iconTheme: WidgetStatePropertyAll(
+        IconThemeData(color: isDark ? Colors.white70 : const Color(0xFF5B5871)),
+      ),
+    ),
+    drawerTheme: DrawerThemeData(
+      backgroundColor: isDark ? const Color(0xFF171420) : Colors.white,
+    ),
+  );
 }
 
 class BrandedLoadingScreen extends StatelessWidget {
@@ -1863,6 +1885,21 @@ class _AppDrawer extends StatelessWidget {
               title: Text(tr(language, 'Language', 'भाषा')),
               trailing: _LanguageToggle(language: language),
             ),
+            SwitchListTile.adaptive(
+              secondary: Icon(
+                app.isDarkMode ? Icons.dark_mode_outlined : Icons.light_mode,
+              ),
+              title: Text(tr(language, 'Dark mode', 'डार्क मोड')),
+              subtitle: Text(
+                app.isDarkMode
+                    ? tr(language, 'Dark theme enabled', 'डार्क थीम चालू है')
+                    : tr(language, 'Light theme enabled', 'लाइट थीम चालू है'),
+              ),
+              value: app.isDarkMode,
+              onChanged: (value) {
+                context.read<AppState>().setDarkMode(value);
+              },
+            ),
             ListTile(
               leading: Icon(
                 app.isUsingFirebase ? Icons.cloud_done_outlined : Icons.storage,
@@ -2419,14 +2456,18 @@ class EmptyMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F2F7),
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(message, style: const TextStyle(color: Color(0xFF6A667C))),
+      child: Text(
+        message,
+        style: TextStyle(color: colorScheme.onSurfaceVariant),
+      ),
     );
   }
 }
@@ -2465,10 +2506,11 @@ class _LanguageToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return DropdownButtonHideUnderline(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Padding(
@@ -2521,19 +2563,20 @@ class _FilePickerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           children: <Widget>[
             CircleAvatar(
-              backgroundColor: const Color(0xFFF3F2F7),
+              backgroundColor: colorScheme.surfaceContainerHighest,
               foregroundColor: const Color(0xFF5F3BFF),
               child: Icon(icon),
             ),
@@ -2551,7 +2594,7 @@ class _FilePickerTile extends StatelessWidget {
                     value == null
                         ? 'Tap to choose a file'
                         : fileNameFromPath(value!),
-                    style: const TextStyle(color: Color(0xFF6A667C)),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -2583,11 +2626,12 @@ class _SurfaceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F7FB),
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -2597,7 +2641,7 @@ class _SurfaceTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               CircleAvatar(
-                backgroundColor: Colors.white,
+                backgroundColor: colorScheme.surface,
                 foregroundColor: const Color(0xFF5F3BFF),
                 child: leading,
               ),
@@ -2613,7 +2657,7 @@ class _SurfaceTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(color: Color(0xFF6A667C)),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
                   ],
                 ),
@@ -2634,7 +2678,7 @@ class _SurfaceTile extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
@@ -2652,7 +2696,10 @@ class _SurfaceTile extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               footer!,
-              style: const TextStyle(color: Color(0xFF444156), height: 1.4),
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
             ),
           ],
         ],
@@ -3376,20 +3423,22 @@ Future<void> showComplaintSheet(BuildContext context) async {
                               );
                               return;
                             }
-                            await app.addComplaint(
+                            final complaint = await app.addComplaint(
                               againstId: target.id,
                               againstLabel: target.shopName ?? target.name,
                               category: category.text.trim(),
                               message: message.text.trim(),
                             );
-                            final latest = app.complaints.first;
+                            if (complaint == null) {
+                              return;
+                            }
                             if (!context.mounted) {
                               return;
                             }
                             Navigator.of(context).pop();
                             await openWhatsAppComplaint(
                               context,
-                              latest.whatsAppMessage,
+                              complaint.whatsAppMessage,
                             );
                           },
                     style: FilledButton.styleFrom(
@@ -3414,7 +3463,9 @@ Future<void> showComplaintSheet(BuildContext context) async {
 }
 
 List<AppUser> complaintTargets(AppState app, AppUser user) {
-  final users = app.allUsers.where((item) => item.id != user.id);
+  final users = app.allUsers.where(
+    (item) => item.id != user.id && item.isActive,
+  );
 
   switch (user.role) {
     case UserRole.customer:

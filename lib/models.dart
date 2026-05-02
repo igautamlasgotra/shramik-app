@@ -33,6 +33,7 @@ class AppUser {
     this.photoPath,
     this.idProofPath,
     this.linkedApproverId,
+    this.isActive = true,
     this.isVerified = false,
     this.isSuspended = false,
     this.preferredListing = false,
@@ -57,6 +58,7 @@ class AppUser {
   final String? photoPath;
   final String? idProofPath;
   final String? linkedApproverId;
+  final bool isActive;
   final bool isVerified;
   final bool isSuspended;
   final bool preferredListing;
@@ -94,6 +96,7 @@ class AppUser {
     String? photoPath,
     String? idProofPath,
     String? linkedApproverId,
+    bool? isActive,
     bool? isVerified,
     bool? isSuspended,
     bool? preferredListing,
@@ -119,6 +122,7 @@ class AppUser {
       photoPath: photoPath ?? this.photoPath,
       idProofPath: idProofPath ?? this.idProofPath,
       linkedApproverId: linkedApproverId ?? this.linkedApproverId,
+      isActive: isActive ?? this.isActive,
       isVerified: isVerified ?? this.isVerified,
       isSuspended: isSuspended ?? this.isSuspended,
       preferredListing: preferredListing ?? this.preferredListing,
@@ -148,6 +152,7 @@ class AppUser {
       'photoPath': photoPath,
       'idProofPath': idProofPath,
       'linkedApproverId': linkedApproverId,
+      'isActive': isActive,
       'isVerified': isVerified,
       'isSuspended': isSuspended,
       'preferredListing': preferredListing,
@@ -175,6 +180,7 @@ class AppUser {
       photoPath: map['photoPath'] as String?,
       idProofPath: map['idProofPath'] as String?,
       linkedApproverId: map['linkedApproverId'] as String?,
+      isActive: (map['isActive'] as bool?) ?? true,
       isVerified: (map['isVerified'] as bool?) ?? false,
       isSuspended: (map['isSuspended'] as bool?) ?? false,
       preferredListing: (map['preferredListing'] as bool?) ?? false,

@@ -18,7 +18,7 @@ Shramik is an Android mobile application developed to digitally connect customer
 
 The app introduces a role-based ecosystem. Customers can post service requests and discover nearby workers and hardware stores using pincode-based filtering. Workers can create profiles, upload identity documents, accept jobs, and manage earnings and commission payments. Approvers, who are typically local hardware store owners, can verify workers in their locality and act as trusted hardware vendors. The admin manages verification, complaints, and commission approvals.
 
-The application also supports job lifecycle tracking, UPI-based manual payment proof submission, WhatsApp-based complaint initiation, worker verification, hardware listing monetization, and Firebase-powered backend storage. This project demonstrates the use of modern mobile application architecture to solve a practical real-world problem for the unorganised workforce sector.
+The application also supports job lifecycle tracking, UPI-based manual payment proof submission, WhatsApp-based complaint initiation, dark/light mode support, worker verification, hardware listing monetization, and Firebase-powered backend storage. This project demonstrates the use of modern mobile application architecture to solve a practical real-world problem for the unorganised workforce sector.
 
 ## 2. Introduction
 
@@ -230,6 +230,10 @@ Approver income is not generated when a worker simply completes a service job. A
 
 Workers must upload identity proof and can be approved based on local pincode trust flow.
 
+### 11.4 Active Profile Rule
+
+Only active worker and approver profiles are shown in user-facing discovery sections. If a backend account is removed, the profile is marked inactive and hidden from customers.
+
 ## 12. Database Design Overview
 
 The main Firestore collections include:
@@ -251,6 +255,7 @@ The main Firestore collections include:
 - trade
 - upiId
 - linkedApproverId
+- isActive
 - isVerified
 - isSuspended
 - totalEarned
@@ -280,6 +285,7 @@ The main Firestore collections include:
 The UI was intentionally designed to be colourful, modern, and accessible for semi-technical users. Important design choices include:
 
 - role-wise dashboards
+- dark/light mode support
 - large touch targets
 - visually distinct cards
 - gradient hero sections
@@ -322,6 +328,7 @@ Complaint creation follows this logic:
 3. app creates a structured complaint string
 4. app stores complaint in Firestore
 5. app redirects to WhatsApp using configured support number
+6. every complaint uses the newly created message instead of cached previous complaint data
 
 ## 15. Testing and Validation
 
@@ -333,6 +340,8 @@ The project was validated through:
 - Firebase Auth signup/login validation
 - Firestore document verification
 - Firebase Storage upload verification
+- complaint message freshness validation
+- inactive approver visibility validation after backend account removal
 
 ## 16. Results Achieved
 
@@ -342,6 +351,9 @@ The project successfully achieved the following outcomes:
 - Firebase-backed realtime data storage
 - professional login and dashboard flows
 - working complaint redirection system
+- dark/light theme toggle with saved preference
+- correct complaint message generation for every complaint request
+- active/inactive profile filtering for backend consistency
 - worker earnings and commission calculation
 - permanent admin account
 - document upload support

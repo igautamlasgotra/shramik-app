@@ -40,11 +40,14 @@ Shramik is a Flutter-based Android service marketplace for connecting customers,
 - role-based login and signup
 - customer, worker, approver, and admin dashboards
 - bilingual support: English and Hindi
+- dark/light mode toggle
 - pincode-based service discovery
 - worker verification workflow
 - job posting and status timeline
 - manual UPI payment flow with screenshot and transaction ID
 - complaint generation through WhatsApp
+- fresh complaint message generation for every complaint action
+- inactive/deleted approver filtering from customer discovery
 - monthly worker commission tracking
 - Firebase-backed realtime persistence for users, jobs, complaints, and uploads
 

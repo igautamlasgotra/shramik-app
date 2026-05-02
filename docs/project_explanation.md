@@ -87,6 +87,7 @@ We built a complete Flutter Android application with:
 
 - custom UI and app branding
 - role-based login and signup
+- dark/light mode toggle
 - customer dashboard
 - worker dashboard
 - approver dashboard
@@ -128,6 +129,8 @@ It contains:
 - job acceptance logic
 - commission calculation logic
 - complaint saving logic
+- theme persistence logic
+- inactive profile handling logic
 - admin verification logic
 - file upload to Firebase Storage
 
@@ -201,6 +204,24 @@ The login and signup user interface is built in `AuthScreen` in `main.dart`. The
 ### What to say in viva
 
 The app uses role-based dashboard composition. The `DashboardShell` dynamically loads different page sets depending on whether the current user is a customer, worker, approver, or admin.
+
+## 6.2A Theme Toggle
+
+### Where in code
+
+- `lib/main.dart` -> `buildShramikTheme(...)`
+- `lib/main.dart` -> `_AppDrawer`
+- `lib/app_state.dart` -> `setDarkMode(...)`
+
+### What it does
+
+- gives dark/light mode switch in side drawer
+- stores selected theme locally using SharedPreferences
+- restores theme after app restart
+
+### What to say in viva
+
+The app uses a single source of truth for theme state in `AppState`. `MaterialApp` reads that state and switches between light and dark theme dynamically.
 
 ## 6.3 Customer Dashboard
 
@@ -318,6 +339,10 @@ Approver earnings are not increased on normal service job completion anymore. Th
 
 Complaint handling is hybrid. We save the complaint record in Firestore for platform tracking and also redirect the user to WhatsApp with a prefilled structured message for faster real-world communication.
 
+### Important bug fix
+
+Earlier the app was opening WhatsApp using the first saved complaint from the complaints list, which sometimes caused an old complaint message to be reused. This was fixed by making `addComplaint(...)` return the newly created complaint object and sending that exact message immediately.
+
 ## 6.8 UPI Payment Flow
 
 ### Where in code
@@ -369,6 +394,28 @@ States:
 ### What to say in viva
 
 The entire service workflow was modelled as a state machine using `JobStatus`. That makes progress tracking simple, readable, and scalable.
+
+## 6.10A Inactive Approver Handling
+
+### Where in code
+
+- `lib/models.dart` -> `AppUser.isActive`
+- `lib/app_state.dart` -> discovery filters like `nearbyHardwareStoresFor(...)`
+- `lib/app_state.dart` -> `_deactivateProfileIfAuthMissing(...)`
+
+### Why this was added
+
+If an approver account was deleted from Firebase Auth but the Firestore profile still existed, customers could still see the stale shop profile.
+
+### How it was fixed
+
+1. added `isActive` field in user model
+2. customer and complaint target lists now only show active users
+3. if login fails because backend auth account is missing, the profile is checked and deactivated
+
+### What to say in viva
+
+This fix handles backend consistency between Firebase Auth and Firestore profile data, which is a practical production-style concern.
 
 ## 6.10 Worker Commission Logic
 

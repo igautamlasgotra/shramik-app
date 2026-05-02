@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -17,6 +18,7 @@ class AppState extends ChangeNotifier {
 
   static const String _storageKey = 'shramik_snapshot_v1';
   static const String _languageKey = 'shramik_language_v1';
+  static const String _themeKey = 'shramik_theme_dark_v1';
   static const String ownerUpiId = 'glasgotra578-2@okicici';
   static const String supportNumber = '917051135222';
   static const String adminEmail = 'admin@shramik.com';
@@ -30,6 +32,7 @@ class AppState extends ChangeNotifier {
   bool _isReady = false;
   bool _usesFirebase = false;
   bool _firebaseConfigured = false;
+  bool _isDarkMode = false;
   String? _firebaseError;
   AppLanguage _language = AppLanguage.english;
   AppUser? _currentUser;
@@ -54,6 +57,7 @@ class AppState extends ChangeNotifier {
   bool get isReady => _isReady;
   bool get isUsingFirebase => _usesFirebase;
   bool get firebaseConfigured => _firebaseConfigured;
+  bool get isDarkMode => _isDarkMode;
   String? get firebaseError => _firebaseError;
   AppLanguage get language => _language;
   AppUser? get currentUser => _currentUser;
@@ -81,6 +85,7 @@ class AppState extends ChangeNotifier {
   Future<void> initialize() async {
     _preferences = await SharedPreferences.getInstance();
     _loadLanguagePreference();
+    _loadThemePreference();
 
     _firebaseConfigured = _isFirebaseConfigured();
     if (_firebaseConfigured) {
@@ -114,6 +119,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setDarkMode(bool value) async {
+    _isDarkMode = value;
+    await _preferences?.setBool(_themeKey, value);
+    notifyListeners();
+  }
+
   Future<String?> login({
     required String email,
     required String password,
@@ -134,6 +145,7 @@ class AppState extends ChangeNotifier {
         notifyListeners();
         return null;
       } on FirebaseAuthException catch (error) {
+        await _deactivateProfileIfAuthMissing(normalizedEmail);
         return _authErrorMessage(error);
       } catch (_) {
         return 'Unable to log in right now';
@@ -185,6 +197,7 @@ class AppState extends ChangeNotifier {
       photoPath: isWorker ? data.photoPath : null,
       idProofPath: isWorker ? data.idProofPath : null,
       linkedApproverId: isWorker ? linkedApprover?.id : null,
+      isActive: true,
       isVerified: data.role == UserRole.customer,
       preferredListing: false,
     );
@@ -210,7 +223,9 @@ class AppState extends ChangeNotifier {
 
   List<AppUser> nearbyHardwareStoresFor(AppUser user) {
     final stores = _users.where((item) {
-      return item.role == UserRole.approver && item.pincode == user.pincode;
+      return item.role == UserRole.approver &&
+          item.isActive &&
+          item.pincode == user.pincode;
     }).toList();
 
     stores.sort((first, second) {
@@ -227,6 +242,7 @@ class AppState extends ChangeNotifier {
   List<AppUser> nearbyWorkersFor(AppUser user) {
     final workers = _users.where((item) {
       return item.role == UserRole.worker &&
+          item.isActive &&
           item.pincode == user.pincode &&
           item.isVerified &&
           !item.isSuspended;
@@ -264,6 +280,7 @@ class AppState extends ChangeNotifier {
   List<AppUser> linkedWorkersForApprover(AppUser approver) {
     final workers = _users.where((user) {
       return user.role == UserRole.worker &&
+          user.isActive &&
           user.pincode == approver.pincode &&
           user.linkedApproverId == approver.id;
     }).toList();
@@ -274,6 +291,7 @@ class AppState extends ChangeNotifier {
   List<AppUser> pendingWorkersForApprover(AppUser approver) {
     final workers = _users.where((user) {
       return user.role == UserRole.worker &&
+          user.isActive &&
           user.pincode == approver.pincode &&
           !user.isVerified;
     }).toList();
@@ -293,7 +311,7 @@ class AppState extends ChangeNotifier {
 
   List<AppUser> pendingWorkersForAdmin() {
     final workers = _users.where((user) {
-      return user.role == UserRole.worker && !user.isVerified;
+      return user.role == UserRole.worker && user.isActive && !user.isVerified;
     }).toList();
     workers.sort((a, b) => a.name.compareTo(b.name));
     return workers;
@@ -301,7 +319,7 @@ class AppState extends ChangeNotifier {
 
   List<AppUser> allWorkers() {
     final workers = _users
-        .where((user) => user.role == UserRole.worker)
+        .where((user) => user.role == UserRole.worker && user.isActive)
         .toList();
     workers.sort((a, b) => a.name.compareTo(b.name));
     return workers;
@@ -309,7 +327,7 @@ class AppState extends ChangeNotifier {
 
   List<AppUser> allApprovers() {
     final approvers = _users
-        .where((user) => user.role == UserRole.approver)
+        .where((user) => user.role == UserRole.approver && user.isActive)
         .toList();
     approvers.sort(
       (a, b) => (a.shopName ?? a.name).compareTo(b.shopName ?? b.name),
@@ -714,7 +732,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addComplaint({
+  Future<ComplaintRecord?> addComplaint({
     required String againstId,
     required String againstLabel,
     required String category,
@@ -722,7 +740,7 @@ class AppState extends ChangeNotifier {
   }) async {
     final reporter = _currentUser;
     if (reporter == null) {
-      return;
+      return null;
     }
 
     final complaint = ComplaintRecord(
@@ -747,12 +765,13 @@ class AppState extends ChangeNotifier {
 
     if (_usesFirebase) {
       await _complaintsCollection.doc(complaint.id).set(complaint.toMap());
-      return;
+      return complaint;
     }
 
     _complaints.add(complaint);
     await _persistLocalSnapshot();
     notifyListeners();
+    return complaint;
   }
 
   String buildComplaintMessage({
@@ -829,6 +848,7 @@ Generated By: Shramik App''';
         photoPath: photoUrl,
         idProofPath: idProofUrl,
         linkedApproverId: isWorker ? linkedApprover?.id : null,
+        isActive: true,
         isVerified: data.role == UserRole.customer,
         preferredListing: false,
       );
@@ -932,7 +952,7 @@ Generated By: Shramik App''';
   Future<void> _refreshCurrentUser(String uid) async {
     final cachedUser = _userById(uid);
     if (cachedUser != null) {
-      _currentUser = cachedUser;
+      _currentUser = cachedUser.isActive ? cachedUser : null;
       return;
     }
 
@@ -942,12 +962,14 @@ Generated By: Shramik App''';
       return;
     }
 
-    _currentUser = _userFromDocument(snapshot);
+    final user = _userFromDocument(snapshot);
+    _currentUser = user.isActive ? user : null;
   }
 
   void _syncCurrentUserFromCache() {
     if (_currentUser != null) {
-      _currentUser = _userById(_currentUser!.id);
+      final latest = _userById(_currentUser!.id);
+      _currentUser = latest != null && latest.isActive ? latest : null;
     }
   }
 
@@ -972,6 +994,7 @@ Generated By: Shramik App''';
       address: 'Main Bazaar, Katra',
       pincode: katraPincode,
       shopName: 'Gupta Hardware Store',
+      isActive: true,
       isVerified: true,
       preferredListing: true,
       preferredPlan: 'Monthly',
@@ -991,6 +1014,7 @@ Generated By: Shramik App''';
       photoPath: 'sample_worker_photo.jpg',
       idProofPath: 'aadhaar_imran.pdf',
       linkedApproverId: approver.id,
+      isActive: true,
       isVerified: true,
       totalEarned: 3200,
       commissionDue: 45,
@@ -1005,6 +1029,7 @@ Generated By: Shramik App''';
       phone: '9876500033',
       address: 'Near Bus Stand, Katra',
       pincode: katraPincode,
+      isActive: true,
       isVerified: true,
     );
     final workerTwo = AppUser(
@@ -1021,6 +1046,7 @@ Generated By: Shramik App''';
       photoPath: 'sample_ravi_photo.jpg',
       idProofPath: 'aadhaar_ravi.pdf',
       linkedApproverId: approver.id,
+      isActive: true,
       isVerified: false,
     );
 
@@ -1148,6 +1174,10 @@ Generated By: Shramik App''';
     await _preferences?.setString(_languageKey, enumName(_language));
   }
 
+  void _loadThemePreference() {
+    _isDarkMode = _preferences?.getBool(_themeKey) ?? false;
+  }
+
   Future<void> _loadLocalFallback() async {
     final snapshotJson = _preferences?.getString(_storageKey);
     if (snapshotJson == null) {
@@ -1188,6 +1218,7 @@ Generated By: Shramik App''';
       phone: adminPhone,
       address: adminAddress,
       pincode: adminPincode,
+      isActive: true,
       isVerified: true,
     );
     final approver = AppUser(
@@ -1200,6 +1231,7 @@ Generated By: Shramik App''';
       address: 'Main Bazaar, Katra',
       pincode: katraPincode,
       shopName: 'Gupta Hardware Store',
+      isActive: true,
       isVerified: true,
       preferredListing: true,
       preferredPlan: 'Monthly',
@@ -1219,6 +1251,7 @@ Generated By: Shramik App''';
       photoPath: 'sample_worker_photo.jpg',
       idProofPath: 'aadhaar_imran.pdf',
       linkedApproverId: approver.id,
+      isActive: true,
       isVerified: true,
       totalEarned: 3200,
       commissionDue: 45,
@@ -1233,6 +1266,7 @@ Generated By: Shramik App''';
       phone: '9876500033',
       address: 'Near Bus Stand, Katra',
       pincode: katraPincode,
+      isActive: true,
       isVerified: true,
     );
     final workerTwo = AppUser(
@@ -1249,6 +1283,7 @@ Generated By: Shramik App''';
       photoPath: 'sample_ravi_photo.jpg',
       idProofPath: 'aadhaar_ravi.pdf',
       linkedApproverId: approver.id,
+      isActive: true,
       isVerified: false,
     );
 
@@ -1436,6 +1471,85 @@ Generated By: Shramik App''';
       return '';
     }
     return fileName.substring(dotIndex + 1);
+  }
+
+  Future<void> _deactivateProfileIfAuthMissing(String email) async {
+    if (!_usesFirebase || !_firebaseConfigured) {
+      return;
+    }
+
+    AppUser? candidate;
+    for (final user in _users) {
+      if (user.email.trim().toLowerCase() == email && user.isActive) {
+        candidate = user;
+        break;
+      }
+    }
+
+    if (candidate == null || candidate.role == UserRole.admin) {
+      return;
+    }
+
+    final signInMethods = await _lookupSignInMethods(email);
+    if (signInMethods.isNotEmpty) {
+      return;
+    }
+
+    if (_usesFirebase) {
+      await _usersCollection.doc(candidate.id).update(<String, dynamic>{
+        'isActive': false,
+      });
+      return;
+    }
+
+    final index = _users.indexWhere((user) => user.id == candidate!.id);
+    if (index == -1) {
+      return;
+    }
+    _users[index] = _users[index].copyWith(isActive: false);
+    await _persistLocalSnapshot();
+    notifyListeners();
+  }
+
+  Future<List<String>> _lookupSignInMethods(String email) async {
+    final apiKey = DefaultFirebaseOptions.currentPlatform.apiKey;
+    if (apiKey == _firebasePlaceholder) {
+      return <String>[];
+    }
+
+    final client = HttpClient();
+    try {
+      final request = await client.postUrl(
+        Uri.parse(
+          'https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=$apiKey',
+        ),
+      );
+      request.headers.contentType = ContentType.json;
+      request.add(
+        utf8.encode(
+          jsonEncode(<String, dynamic>{
+            'identifier': email,
+            'continueUri': 'https://shramik.app/login',
+          }),
+        ),
+      );
+
+      final response = await request.close();
+      final body = await utf8.decodeStream(response);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return <String>[];
+      }
+
+      final map = jsonDecode(body) as Map<String, dynamic>;
+      final methods = map['signinMethods'] as List<dynamic>?;
+      return methods == null
+          ? <String>[]
+          : methods.map((item) => item.toString()).toList();
+    } catch (_) {
+      return <String>[];
+    } finally {
+      client.close(force: true);
+    }
   }
 
   String _authErrorMessage(FirebaseAuthException error) {

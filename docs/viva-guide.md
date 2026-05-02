@@ -70,6 +70,7 @@ We designed:
 - app branding and custom logo
 - login/signup flows
 - role-based dashboards
+- dark/light theme support from side menu
 - cards, metrics, status chips, and timeline views
 
 ### Step 3: Domain Modeling
@@ -126,10 +127,12 @@ We implemented:
 - admin commission verification flow
 - no automatic approver earnings on simple job completion
 - approver earnings only from explicit material/parts sale tracking
+- dark/light theme toggle with local persistence
+- only active approvers/workers shown in discovery lists
 
 ### Step 8: Complaint Flow
 
-We created a structured WhatsApp complaint mechanism where the app generates the formatted complaint text and redirects the user to the support number.
+We created a structured WhatsApp complaint mechanism where the app generates the formatted complaint text and redirects the user to the support number. We also fixed the complaint flow so every new complaint opens WhatsApp with its own fresh message instead of reusing an old saved complaint.
 
 ### Step 9: Testing
 
@@ -235,6 +238,10 @@ We corrected the logic so shop/approver income is not added on normal service co
 ### Q8. What is the role of Firebase Storage?
 
 It stores uploaded files like worker photo, Aadhaar PDF, payment screenshot, and bill proof.
+
+### Q9. How did you handle deleted approvers still showing in customer dashboard?
+
+We added an `isActive` profile flag and filtered discovery lists to show only active approvers and workers. If a backend login account is missing but the Firestore profile still exists, the app deactivates that stale profile and hides it from customer-facing lists.
 
 ## 12. Final Summary for Viva
 
