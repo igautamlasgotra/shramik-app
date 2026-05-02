@@ -234,6 +234,10 @@ Workers must upload identity proof and can be approved based on local pincode tr
 
 Only active worker and approver profiles are shown in user-facing discovery sections. If a backend account is removed, the profile is marked inactive and hidden from customers.
 
+### 11.5 Auth-Profile Synchronization Rule
+
+If a valid Firebase Authentication user successfully logs in but the corresponding profile was previously marked inactive, the app reactivates that backend profile and restores access. This prevents returning users from seeing a false "user profile not found in backend" state.
+
 ## 12. Database Design Overview
 
 The main Firestore collections include:
@@ -342,6 +346,7 @@ The project was validated through:
 - Firebase Storage upload verification
 - complaint message freshness validation
 - inactive approver visibility validation after backend account removal
+- valid returning user profile reactivation validation
 
 ## 16. Results Achieved
 
@@ -354,6 +359,7 @@ The project successfully achieved the following outcomes:
 - dark/light theme toggle with saved preference
 - correct complaint message generation for every complaint request
 - active/inactive profile filtering for backend consistency
+- automatic profile recovery for valid returning authenticated users
 - worker earnings and commission calculation
 - permanent admin account
 - document upload support

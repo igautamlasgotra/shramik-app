@@ -417,6 +417,10 @@ If an approver account was deleted from Firebase Auth but the Firestore profile 
 
 This fix handles backend consistency between Firebase Auth and Firestore profile data, which is a practical production-style concern.
 
+### Additional login recovery fix
+
+If a real Firebase Auth account successfully logs in but the profile document was previously inactive, the app now automatically reactivates that profile. This solved the problem where approvers could log in using a valid email/password but still see a backend profile missing error.
+
 ## 6.10 Worker Commission Logic
 
 ### Where in code

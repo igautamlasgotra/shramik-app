@@ -48,6 +48,7 @@ Shramik is a Flutter-based Android service marketplace for connecting customers,
 - complaint generation through WhatsApp
 - fresh complaint message generation for every complaint action
 - inactive/deleted approver filtering from customer discovery
+- automatic backend profile reactivation for valid returning users
 - monthly worker commission tracking
 - Firebase-backed realtime persistence for users, jobs, complaints, and uploads
 

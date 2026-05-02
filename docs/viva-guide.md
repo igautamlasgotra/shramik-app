@@ -129,6 +129,7 @@ We implemented:
 - approver earnings only from explicit material/parts sale tracking
 - dark/light theme toggle with local persistence
 - only active approvers/workers shown in discovery lists
+- automatic reactivation of valid backend profiles on successful login
 
 ### Step 8: Complaint Flow
 
@@ -242,6 +243,10 @@ It stores uploaded files like worker photo, Aadhaar PDF, payment screenshot, and
 ### Q9. How did you handle deleted approvers still showing in customer dashboard?
 
 We added an `isActive` profile flag and filtered discovery lists to show only active approvers and workers. If a backend login account is missing but the Firestore profile still exists, the app deactivates that stale profile and hides it from customer-facing lists.
+
+### Q10. How did you solve the "user profile not found in backend" issue for a valid approver login?
+
+We synchronized Firebase Auth and Firestore profile state more carefully. If a login succeeds in Firebase Auth, the app now treats that as proof that the account is valid and reactivates the matching Firestore profile if it was incorrectly inactive.
 
 ## 12. Final Summary for Viva
 
